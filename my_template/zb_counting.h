@@ -40,8 +40,14 @@ extern "C" {
 /* Main application customizable context. Stores all settings and static values. */
 typedef struct
 {
-    zb_zcl_basic_attrs_ext_t         basic_attr;            /**< Базовый атрибут с информацией об устройстве */
-    zb_zcl_identify_attrs_t          identify_attr;         /**< */
+    zb_zcl_basic_attrs_ext_t         basic_attr_counter;            /**< Базовый атрибут с информацией об устройстве */
+    zb_zcl_basic_attrs_ext_t         basic_attr_duty;            /**< Базовый атрибут с информацией об устройстве */
+    zb_zcl_basic_attrs_ext_t         basic_attr_leds;            /**< Базовый атрибут с информацией об устройстве */
+    
+    zb_zcl_identify_attrs_t          identify_attr_counter;         /**< */
+    zb_zcl_identify_attrs_t          identify_attr_duty;         /**< */
+    zb_zcl_identify_attrs_t          identify_attr_leds;         /**< */
+
     zb_zcl_analog_input_attrs_t      counter_value;         /**< Значение счетчика в десятках ватт в час */
     zb_zcl_multi_value_attrs_t       counter_pulse_in_kwh;  /**< Кол-во импульсов в одном кВт*ч */
     zb_zcl_multi_input_attrs_t       duty_time_live_in_hour;/**< Время работы устройства до перезагрузки в часах */
@@ -105,16 +111,16 @@ system_param_t system_param_default =
       zb_zcl_cluster_desc_t cluster_list_name[] =                   \
       {                                                             \
         ZB_ZCL_CLUSTER_DESC(                                        \
-          ZB_ZCL_CLUSTER_ID_IDENTIFY,                               \
-          ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),     \
-          (identify_attr_list),                                     \
+          ZB_ZCL_CLUSTER_ID_BASIC,                                  \
+          ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),        \
+          (basic_attr_list),                                        \
           ZB_ZCL_CLUSTER_SERVER_ROLE,                               \
           ZB_ZCL_MANUF_CODE_INVALID                                 \
         ),                                                          \
         ZB_ZCL_CLUSTER_DESC(                                        \
-          ZB_ZCL_CLUSTER_ID_BASIC,                                  \
-          ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),        \
-          (basic_attr_list),                                        \
+          ZB_ZCL_CLUSTER_ID_IDENTIFY,                               \
+          ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),     \
+          (identify_attr_list),                                     \
           ZB_ZCL_CLUSTER_SERVER_ROLE,                               \
           ZB_ZCL_MANUF_CODE_INVALID                                 \
         ),                                                          \
@@ -141,24 +147,24 @@ system_param_t system_param_default =
  *  @param in_clust_num     Number of the supported input clusters.
  *  @param out_clust_num    Number of the supported output clusters.
  */
-#define ZB_DECLARE_COUNTER_DESC(ep_name, ep_id, in_clust_num, out_clust_num)  \
-  ZB_DECLARE_SIMPLE_DESC(in_clust_num, out_clust_num);                        \
-  ZB_AF_SIMPLE_DESC_TYPE(in_clust_num, out_clust_num) simple_desc_##ep_name = \
-  {                                                                           \
-    ep_id,                                                                    \
-    ZB_AF_HA_PROFILE_ID,                                                      \
-    ZB_HA_CONSUMPTION_AWARENESS_DEVICE_ID,                                    \
-    ZB_DEVICE_VER,                                                            \
-    0,                                                                        \
-    in_clust_num,                                                             \
-    out_clust_num,                                                            \
-    {                                                                         \
-      ZB_ZCL_CLUSTER_ID_BASIC,                                                \
-      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                             \
-      ZB_ZCL_CLUSTER_ID_ANALOG_INPUT,                                         \
-      ZB_ZCL_CLUSTER_ID_MULTI_VALUE,                                          \
-    }                                                                         \
-  }
+#define ZB_DECLARE_COUNTER_DESC(ep_name, ep_id, in_clust_num, out_clust_num)               \
+  ZB_DECLARE_SIMPLE_DESC_VA(in_clust_num, out_clust_num, ep_name);                         \
+  ZB_AF_SIMPLE_DESC_TYPE_VA(in_clust_num, out_clust_num, ep_name) simple_desc_## ep_name = \
+  {                                                                                        \
+    ep_id,                                                                                 \
+    ZB_AF_HA_PROFILE_ID,                                                                   \
+    ZB_HA_CONSUMPTION_AWARENESS_DEVICE_ID,                                                 \
+    ZB_DEVICE_VER,                                                                         \
+    0,                                                                                     \
+    in_clust_num,                                                                          \
+    out_clust_num,                                                                         \
+    {                                                                                      \
+      ZB_ZCL_CLUSTER_ID_BASIC,                                                             \
+      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                                          \
+      ZB_ZCL_CLUSTER_ID_ANALOG_INPUT,                                                      \
+      ZB_ZCL_CLUSTER_ID_MULTI_VALUE,                                                       \
+    }                                                                                      \
+  }           
 
 /** @brief Declares endpoint for the COUNTER EndPoint.
  *   
@@ -172,8 +178,8 @@ system_param_t system_param_default =
                           ZB_COUNTER_EP_IN_CLUSTER_NUM,                               \
                           ZB_COUNTER_EP_OUT_CLUSTER_NUM);                             \
                                                                                       \
-  ZBOSS_DEVICE_DECLARE_REPORTING_CTX(reporting_info_device_all_ep,                    \
-                                     ZB_SUM_REPORTING_ATTR_COUNT);                    \
+  ZBOSS_DEVICE_DECLARE_REPORTING_CTX(reporting_info_counter,                          \
+                                     (ZB_COUNTER_EP_REPORT_ATTR_COUNT));              \
                                                                                       \
   ZB_AF_DECLARE_ENDPOINT_DESC(ep_name,                                                \
                               ep_id,                                                  \
@@ -182,9 +188,9 @@ system_param_t system_param_default =
                               NULL,                                                   \
                               ZB_ZCL_ARRAY_SIZE(cluster_list, zb_zcl_cluster_desc_t), \
                               cluster_list,                                           \
-                              (zb_af_simple_desc_1_1_t*)&simple_desc_##ep_name,       \
-                              ZB_SUM_REPORTING_ATTR_COUNT,                            \
-                              reporting_info_device_all_ep,                           \
+                              (zb_af_simple_desc_1_1_t*)&simple_desc_## ep_name,      \
+                              ZB_COUNTER_EP_REPORT_ATTR_COUNT,                        \
+                              reporting_info_counter,                                 \
                               0,                                                      \
                               NULL)
 
@@ -206,16 +212,16 @@ system_param_t system_param_default =
       zb_zcl_cluster_desc_t cluster_list_name[] =                         \
       {                                                                   \
         ZB_ZCL_CLUSTER_DESC(                                              \
-          ZB_ZCL_CLUSTER_ID_IDENTIFY,                                     \
-          ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),           \
-          (identify_attr_list),                                           \
+          ZB_ZCL_CLUSTER_ID_BASIC,                                        \
+          ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),              \
+          (basic_attr_list),                                              \
           ZB_ZCL_CLUSTER_SERVER_ROLE,                                     \
           ZB_ZCL_MANUF_CODE_INVALID                                       \
         ),                                                                \
         ZB_ZCL_CLUSTER_DESC(                                              \
-          ZB_ZCL_CLUSTER_ID_BASIC,                                        \
-          ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),              \
-          (basic_attr_list),                                              \
+          ZB_ZCL_CLUSTER_ID_IDENTIFY,                                     \
+          ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),           \
+          (identify_attr_list),                                           \
           ZB_ZCL_CLUSTER_SERVER_ROLE,                                     \
           ZB_ZCL_MANUF_CODE_INVALID                                       \
         ),                                                                \
@@ -235,23 +241,23 @@ system_param_t system_param_default =
  *  @param in_clust_num     Number of the supported input clusters.
  *  @param out_clust_num    Number of the supported output clusters.
  */
-#define ZB_DECLARE_DUTY_DESC(ep_name, ep_id, in_clust_num, out_clust_num)             \
-  ZB_DECLARE_SIMPLE_DESC(in_clust_num, out_clust_num);                                \
-  ZB_AF_SIMPLE_DESC_TYPE(in_clust_num, out_clust_num) simple_desc_##ep_name =         \
-  {                                                                                   \
-    ep_id,                                                                            \
-    ZB_AF_HA_PROFILE_ID,                                                              \
-    ZB_HA_CONFIGURATION_TOOL_DEVICE_ID ,                                              \
-    ZB_DEVICE_VER,                                                                    \
-    0,                                                                                \
-    in_clust_num,                                                                     \
-    out_clust_num,                                                                    \
-    {                                                                                 \
-      ZB_ZCL_CLUSTER_ID_BASIC,                                                        \
-      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                                     \
-      ZB_ZCL_CLUSTER_ID_MULTI_INPUT,                                                  \
-    }                                                                                 \
-  }
+#define ZB_DECLARE_DUTY_DESC(ep_name, ep_id, in_clust_num, out_clust_num)                  \
+  ZB_DECLARE_SIMPLE_DESC_VA(in_clust_num, out_clust_num, ep_name);                         \
+  ZB_AF_SIMPLE_DESC_TYPE_VA(in_clust_num, out_clust_num, ep_name) simple_desc_## ep_name = \
+  {                                                                                        \
+    ep_id,                                                                                 \
+    ZB_AF_HA_PROFILE_ID,                                                                   \
+    ZB_HA_CONFIGURATION_TOOL_DEVICE_ID,                                                    \
+    ZB_DEVICE_VER,                                                                         \
+    0,                                                                                     \
+    in_clust_num,                                                                          \
+    out_clust_num,                                                                         \
+    {                                                                                      \
+      ZB_ZCL_CLUSTER_ID_BASIC,                                                             \
+      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                                          \
+      ZB_ZCL_CLUSTER_ID_MULTI_INPUT,                                                       \
+    }                                                                                      \
+  }    
 
 /** @brief Declares endpoint for the DUTY EndPoint.
  *   
@@ -265,6 +271,9 @@ system_param_t system_param_default =
                        ZB_DUTY_EP_IN_CLUSTER_NUM,                                     \
                        ZB_DUTY_EP_OUT_CLUSTER_NUM);                                   \
                                                                                       \
+  ZBOSS_DEVICE_DECLARE_REPORTING_CTX(reporting_info_duty,                        \
+                                     (ZB_DUTY_EP_REPORT_ATTR_COUNT));                 \
+                                                                                      \
   ZB_AF_DECLARE_ENDPOINT_DESC(ep_name,                                                \
                               ep_id,                                                  \
                               ZB_AF_HA_PROFILE_ID,                                    \
@@ -272,9 +281,9 @@ system_param_t system_param_default =
                               NULL,                                                   \
                               ZB_ZCL_ARRAY_SIZE(cluster_list, zb_zcl_cluster_desc_t), \
                               cluster_list,                                           \
-                              (zb_af_simple_desc_1_1_t*)&simple_desc_##ep_name,       \
-                              ZB_SUM_REPORTING_ATTR_COUNT,                            \
-                              reporting_info_device_all_ep,                           \
+                              (zb_af_simple_desc_1_1_t*)&simple_desc_## ep_name,      \
+                              ZB_DUTY_EP_REPORT_ATTR_COUNT,                           \
+                              reporting_info_duty,                               \
                               0,                                                      \
                               NULL)                                                   \
                               
@@ -299,16 +308,16 @@ system_param_t system_param_default =
   zb_zcl_cluster_desc_t cluster_list_name[] =                    \
   {                                                              \
     ZB_ZCL_CLUSTER_DESC(                                         \
-      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                \
-      ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),      \
-      (identify_attr_list),                                      \
+      ZB_ZCL_CLUSTER_ID_BASIC,                                   \
+      ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),         \
+      (basic_attr_list),                                         \
       ZB_ZCL_CLUSTER_SERVER_ROLE,                                \
       ZB_ZCL_MANUF_CODE_INVALID                                  \
     ),                                                           \
     ZB_ZCL_CLUSTER_DESC(                                         \
-      ZB_ZCL_CLUSTER_ID_BASIC,                                   \
-      ZB_ZCL_ARRAY_SIZE(basic_attr_list, zb_zcl_attr_t),         \
-      (basic_attr_list),                                         \
+      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                \
+      ZB_ZCL_ARRAY_SIZE(identify_attr_list, zb_zcl_attr_t),      \
+      (identify_attr_list),                                      \
       ZB_ZCL_CLUSTER_SERVER_ROLE,                                \
       ZB_ZCL_MANUF_CODE_INVALID                                  \
     ),                                                           \
@@ -343,24 +352,24 @@ system_param_t system_param_default =
   @param in_clust_num - number of supported input clusters
   @param out_clust_num - number of supported output clusters
 */
-#define ZB_DECLARE_LEDS_SIMPLE_DESC(ep_name, ep_id, in_clust_num, out_clust_num) \
-  ZB_DECLARE_SIMPLE_DESC(in_clust_num, out_clust_num);                           \
-  ZB_AF_SIMPLE_DESC_TYPE(in_clust_num, out_clust_num) simple_desc_##ep_name =    \
-  {                                                                              \
-    ep_id,                                                                       \
-    ZB_AF_HA_PROFILE_ID,                                                         \
-    ZB_HA_DIMMABLE_LIGHT_DEVICE_ID,                                              \
-    ZB_DEVICE_VER,                                                               \
-    0,                                                                           \
-    in_clust_num,                                                                \
-    out_clust_num,                                                               \
-    {                                                                            \
-      ZB_ZCL_CLUSTER_ID_BASIC,                                                   \
-      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                                \
-      ZB_ZCL_CLUSTER_ID_ON_OFF,                                                  \
-      ZB_ZCL_CLUSTER_ID_LEVEL_CONTROL,                                           \
-      ZB_ZCL_CLUSTER_ID_BINARY_VALUE                                             \
-    }                                                                            \
+#define ZB_DECLARE_LEDS_SIMPLE_DESC(ep_name, ep_id, in_clust_num, out_clust_num)           \
+  ZB_DECLARE_SIMPLE_DESC_VA(in_clust_num, out_clust_num, ep_name);                         \
+  ZB_AF_SIMPLE_DESC_TYPE_VA(in_clust_num, out_clust_num, ep_name) simple_desc_## ep_name = \
+  {                                                                                        \
+    ep_id,                                                                                 \
+    ZB_AF_HA_PROFILE_ID,                                                                   \
+    ZB_HA_DIMMABLE_LIGHT_DEVICE_ID,                                                        \
+    ZB_DEVICE_VER,                                                                         \
+    0,                                                                                     \
+    in_clust_num,                                                                          \
+    out_clust_num,                                                                         \
+    {                                                                                      \
+      ZB_ZCL_CLUSTER_ID_BASIC,                                                             \
+      ZB_ZCL_CLUSTER_ID_IDENTIFY,                                                          \
+      ZB_ZCL_CLUSTER_ID_ON_OFF,                                                            \
+      ZB_ZCL_CLUSTER_ID_LEVEL_CONTROL,                                                     \
+      ZB_ZCL_CLUSTER_ID_BINARY_VALUE                                                       \
+    }                                                                                      \
   }   
 
 /*!
@@ -370,9 +379,13 @@ system_param_t system_param_default =
   @param cluster_list - endpoint cluster list
  */
 #define ZB_DECLARE_LEDS_EP(ep_name, ep_id, cluster_list)                              \
-  ZB_DECLARE_LEDS_SIMPLE_DESC(ep_name, ep_id,                                         \
+  ZB_DECLARE_LEDS_SIMPLE_DESC(ep_name,                                                \
+                              ep_id,                                                  \
                               ZB_LEDS_EP_IN_CLUSTER_NUM,                              \
                               ZB_LEDS_EP_OUT_CLUSTER_NUM);                            \
+                                                                                      \
+  ZBOSS_DEVICE_DECLARE_REPORTING_CTX(reporting_info_leds,                             \
+                                     (ZB_LEDS_EP_REPORT_ATTR_COUNT));                 \
                                                                                       \
   ZBOSS_DEVICE_DECLARE_LEVEL_CONTROL_CTX(cvc_alarm_info## ep_name,                    \
                                          ZB_LEDS_EP_LIGHT_CVC_ATTR_COUNT);            \
@@ -384,9 +397,9 @@ system_param_t system_param_default =
                               NULL,                                                   \
                               ZB_ZCL_ARRAY_SIZE(cluster_list, zb_zcl_cluster_desc_t), \
                               cluster_list,                                           \
-                              (zb_af_simple_desc_1_1_t*)&simple_desc_##ep_name,       \
-                              ZB_SUM_REPORTING_ATTR_COUNT,                            \
-                              reporting_info_device_all_ep,                           \
+                              (zb_af_simple_desc_1_1_t*)&simple_desc_## ep_name,      \
+                              ZB_LEDS_EP_REPORT_ATTR_COUNT,                           \
+                              reporting_info_leds,                                    \
                               ZB_LEDS_EP_LIGHT_CVC_ATTR_COUNT,                        \
                               cvc_alarm_info## ep_name)
 

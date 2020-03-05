@@ -114,20 +114,46 @@ static zb_bool_t reset_button_press         = ZB_FALSE;
 static zb_time_t reset_button_time_start    = 0;
 
 /* COMMON clusters */
-ZB_ZCL_DECLARE_IDENTIFY_ATTRIB_LIST(identify_attr_list, &m_dev_ctx.identify_attr.identify_time);
+ZB_ZCL_DECLARE_IDENTIFY_ATTRIB_LIST(identify_attr_list_counter, &m_dev_ctx.identify_attr_counter.identify_time);
+ZB_ZCL_DECLARE_IDENTIFY_ATTRIB_LIST(identify_attr_list_duty,    &m_dev_ctx.identify_attr_duty.identify_time);
+ZB_ZCL_DECLARE_IDENTIFY_ATTRIB_LIST(identify_attr_list_leds,    &m_dev_ctx.identify_attr_leds.identify_time);
 
-ZB_ZCL_DECLARE_BASIC_ATTRIB_LIST_EXT(basic_attr_list,
-                                     &m_dev_ctx.basic_attr.zcl_version,
-                                     &m_dev_ctx.basic_attr.app_version,
-                                     &m_dev_ctx.basic_attr.stack_version,
-                                     &m_dev_ctx.basic_attr.hw_version,
-                                     m_dev_ctx.basic_attr.mf_name,
-                                     m_dev_ctx.basic_attr.model_id,
-                                     m_dev_ctx.basic_attr.date_code,
-                                     &m_dev_ctx.basic_attr.power_source,
-                                     m_dev_ctx.basic_attr.location_id,
-                                     &m_dev_ctx.basic_attr.ph_env,
-                                     m_dev_ctx.basic_attr.sw_ver);
+ZB_ZCL_DECLARE_BASIC_ATTRIB_LIST_EXT(basic_attr_list_counter,
+                                     &m_dev_ctx.basic_attr_counter.zcl_version,
+                                     &m_dev_ctx.basic_attr_counter.app_version,
+                                     &m_dev_ctx.basic_attr_counter.stack_version,
+                                     &m_dev_ctx.basic_attr_counter.hw_version,
+                                     m_dev_ctx.basic_attr_counter.mf_name,
+                                     m_dev_ctx.basic_attr_counter.model_id,
+                                     m_dev_ctx.basic_attr_counter.date_code,
+                                     &m_dev_ctx.basic_attr_counter.power_source,
+                                     m_dev_ctx.basic_attr_counter.location_id,
+                                     &m_dev_ctx.basic_attr_counter.ph_env,
+                                     m_dev_ctx.basic_attr_counter.sw_ver);
+ZB_ZCL_DECLARE_BASIC_ATTRIB_LIST_EXT(basic_attr_list_duty,
+                                     &m_dev_ctx.basic_attr_duty.zcl_version,
+                                     &m_dev_ctx.basic_attr_duty.app_version,
+                                     &m_dev_ctx.basic_attr_duty.stack_version,
+                                     &m_dev_ctx.basic_attr_duty.hw_version,
+                                     m_dev_ctx.basic_attr_duty.mf_name,
+                                     m_dev_ctx.basic_attr_duty.model_id,
+                                     m_dev_ctx.basic_attr_duty.date_code,
+                                     &m_dev_ctx.basic_attr_duty.power_source,
+                                     m_dev_ctx.basic_attr_duty.location_id,
+                                     &m_dev_ctx.basic_attr_duty.ph_env,
+                                     m_dev_ctx.basic_attr_duty.sw_ver);
+ZB_ZCL_DECLARE_BASIC_ATTRIB_LIST_EXT(basic_attr_list_leds,
+                                     &m_dev_ctx.basic_attr_leds.zcl_version,
+                                     &m_dev_ctx.basic_attr_leds.app_version,
+                                     &m_dev_ctx.basic_attr_leds.stack_version,
+                                     &m_dev_ctx.basic_attr_leds.hw_version,
+                                     m_dev_ctx.basic_attr_leds.mf_name,
+                                     m_dev_ctx.basic_attr_leds.model_id,
+                                     m_dev_ctx.basic_attr_leds.date_code,
+                                     &m_dev_ctx.basic_attr_leds.power_source,
+                                     m_dev_ctx.basic_attr_leds.location_id,
+                                     &m_dev_ctx.basic_attr_leds.ph_env,
+                                     m_dev_ctx.basic_attr_leds.sw_ver);
 
 /* COUNTER clusters */
 ZB_ZCL_DECLARE_ANALOG_INPUT_ATTRIB_LIST(counter_attr_list,
@@ -165,19 +191,19 @@ ZB_ZCL_DECLARE_BINARY_VALUE_ATTRIB_LIST(led_inversion_attr_list,
                                         &m_dev_ctx.leds_inversion.status_flags); 
 
 /* EP1 - COUNTER */
-ZB_DECLARE_COUNTER_CLUSTER_LIST(counter_cluster_list, basic_attr_list, identify_attr_list, counter_attr_list, pulse_in_kwh_attr_list);
+ZB_DECLARE_COUNTER_CLUSTER_LIST(counter_cluster_list, basic_attr_list_counter, identify_attr_list_counter, counter_attr_list, pulse_in_kwh_attr_list);
 ZB_DECLARE_COUNTER_EP(counter_ep, ZB_COUNTER_EP, counter_cluster_list); 
 
 /* EP2 - DUTY */
-ZB_DECLARE_DUTY_CLUSTER_LIST(duty_cluster_list, basic_attr_list, identify_attr_list, time_live_in_hour_attr_list);
+ZB_DECLARE_DUTY_CLUSTER_LIST(duty_cluster_list, basic_attr_list_duty, identify_attr_list_duty, time_live_in_hour_attr_list);
 ZB_DECLARE_DUTY_EP(duty_ep, ZB_DUTY_EP, duty_cluster_list);
 
 /* EP3 - LEDS */
-ZB_DECLARE_LEDS_CLUSTER_LIST(leds_cluster_list, basic_attr_list, identify_attr_list, on_off_attr_list, level_control_attr_list, led_inversion_attr_list);
+ZB_DECLARE_LEDS_CLUSTER_LIST(leds_cluster_list, basic_attr_list_leds, identify_attr_list_leds, on_off_attr_list, level_control_attr_list, led_inversion_attr_list);
 ZB_DECLARE_LEDS_EP(leds_ep, ZB_LEDS_EP, leds_cluster_list);
 
 /* CTX */
-ZBOSS_DECLARE_DEVICE_CTX_3_EP(ucounter_ctx, counter_ep, duty_ep, leds_ep);
+ZBOSS_DECLARE_DEVICE_CTX_3_EP(ucounter_ctx, duty_ep, leds_ep,counter_ep);
 
 
 typedef enum button_event_e 
@@ -581,8 +607,8 @@ static void buttons_handler(bsp_event_t evt)
 
     switch(evt)
     {
-        case IDENTIFY_MODE_BSP_EVT:
-            /* Check if endpoint is in identifying mode, if not put desired endpoint in identifying mode. */
+        /*case IDENTIFY_MODE_BSP_EVT:
+            /* Check if endpoint is in identifying mode, if not put desired endpoint in identifying mode. * /
             if (m_dev_ctx.identify_attr.identify_time == ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE)
             {
                 NRF_LOG_INFO("Device put in identifying mode");
@@ -594,7 +620,7 @@ static void buttons_handler(bsp_event_t evt)
                 NRF_LOG_INFO("Cancel F&B target procedure");
                 zb_bdb_finding_binding_target_cancel();
             }
-            break;
+            break;*/
 
         case BSP_EVENT_RESET:
             
@@ -659,36 +685,98 @@ static void leds_buttons_init(void)
     }
 }
 
+
 /**@brief Function for initializing all clusters attributes.
  */
 static void clusters_attr_init(void)
 {
     /* Basic cluster attributes data */
-    m_dev_ctx.basic_attr.zcl_version   = ZB_ZCL_VERSION;
-    m_dev_ctx.basic_attr.app_version   = BULB_INIT_BASIC_APP_VERSION;
-    m_dev_ctx.basic_attr.stack_version = BULB_INIT_BASIC_STACK_VERSION;
-    m_dev_ctx.basic_attr.hw_version    = BULB_INIT_BASIC_HW_VERSION;
-    m_dev_ctx.basic_attr.power_source  = BULB_INIT_BASIC_POWER_SOURCE;
-    m_dev_ctx.basic_attr.ph_env        = BULB_INIT_BASIC_PH_ENV;
+    m_dev_ctx.basic_attr_counter.zcl_version   = ZB_ZCL_VERSION;
+    m_dev_ctx.basic_attr_counter.app_version   = BULB_INIT_BASIC_APP_VERSION;
+    m_dev_ctx.basic_attr_counter.stack_version = BULB_INIT_BASIC_STACK_VERSION;
+    m_dev_ctx.basic_attr_counter.hw_version    = BULB_INIT_BASIC_HW_VERSION;
+    m_dev_ctx.basic_attr_counter.power_source  = BULB_INIT_BASIC_POWER_SOURCE;
+    m_dev_ctx.basic_attr_counter.ph_env        = BULB_INIT_BASIC_PH_ENV;
 
-    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr.mf_name,
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_counter.mf_name,
                           BULB_INIT_BASIC_MANUF_NAME,
                           ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MANUF_NAME));
 
-    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr.model_id,
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_counter.model_id,
                           BULB_INIT_BASIC_MODEL_ID,
                           ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MODEL_ID));
 
-    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr.date_code,
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_counter.date_code,
                           BULB_INIT_BASIC_DATE_CODE,
                           ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_DATE_CODE));
 
-    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr.location_id,
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_counter.location_id,
                           BULB_INIT_BASIC_LOCATION_DESC,
                           ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_LOCATION_DESC));
 
     /* Identify cluster attributes data */
-    m_dev_ctx.identify_attr.identify_time = ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE;               
+    m_dev_ctx.identify_attr_counter.identify_time = ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE;          
+
+
+    //////////////////////////
+
+    /* Basic cluster attributes data */
+    m_dev_ctx.basic_attr_duty.zcl_version   = ZB_ZCL_VERSION;
+    m_dev_ctx.basic_attr_duty.app_version   = BULB_INIT_BASIC_APP_VERSION;
+    m_dev_ctx.basic_attr_duty.stack_version = BULB_INIT_BASIC_STACK_VERSION;
+    m_dev_ctx.basic_attr_duty.hw_version    = BULB_INIT_BASIC_HW_VERSION;
+    m_dev_ctx.basic_attr_duty.power_source  = BULB_INIT_BASIC_POWER_SOURCE;
+    m_dev_ctx.basic_attr_duty.ph_env        = BULB_INIT_BASIC_PH_ENV;
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_duty.mf_name,
+                          BULB_INIT_BASIC_MANUF_NAME,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MANUF_NAME));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_duty.model_id,
+                          BULB_INIT_BASIC_MODEL_ID,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MODEL_ID));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_duty.date_code,
+                          BULB_INIT_BASIC_DATE_CODE,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_DATE_CODE));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_duty.location_id,
+                          BULB_INIT_BASIC_LOCATION_DESC,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_LOCATION_DESC));
+
+    /* Identify cluster attributes data */
+    m_dev_ctx.identify_attr_duty.identify_time = ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE;
+
+    //////////////////////////////
+
+    /* Basic cluster attributes data */
+    m_dev_ctx.basic_attr_leds.zcl_version   = ZB_ZCL_VERSION;
+    m_dev_ctx.basic_attr_leds.app_version   = BULB_INIT_BASIC_APP_VERSION;
+    m_dev_ctx.basic_attr_leds.stack_version = BULB_INIT_BASIC_STACK_VERSION;
+    m_dev_ctx.basic_attr_leds.hw_version    = BULB_INIT_BASIC_HW_VERSION;
+    m_dev_ctx.basic_attr_leds.power_source  = BULB_INIT_BASIC_POWER_SOURCE;
+    m_dev_ctx.basic_attr_leds.ph_env        = BULB_INIT_BASIC_PH_ENV;
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_leds.mf_name,
+                          BULB_INIT_BASIC_MANUF_NAME,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MANUF_NAME));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_leds.model_id,
+                          BULB_INIT_BASIC_MODEL_ID,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_MODEL_ID));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_leds.date_code,
+                          BULB_INIT_BASIC_DATE_CODE,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_DATE_CODE));
+
+    ZB_ZCL_SET_STRING_VAL(m_dev_ctx.basic_attr_leds.location_id,
+                          BULB_INIT_BASIC_LOCATION_DESC,
+                          ZB_ZCL_STRING_CONST_SIZE(BULB_INIT_BASIC_LOCATION_DESC));
+
+    /* Identify cluster attributes data */
+    m_dev_ctx.identify_attr_leds.identify_time = ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE;
+
+    ///////////////////////////////     
 
     /* Users clusters attributes data */
     m_dev_ctx.duty_time_live_in_hour.number_of_states  = ZB_ZCL_MULTI_INPUT_NUMBER_OF_STATES_MAX_VALUE;
