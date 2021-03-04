@@ -1,2 +1,2 @@
 # zigbee-template
-Zigbee template
+Zigbee template for nRF52840
